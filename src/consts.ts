@@ -1,5 +1,4 @@
-// Place any global data in this file.
-// You can import this data from anywhere in your site by using the `import` keyword.
-
-export const SITE_TITLE = 'Astro Blog';
-export const SITE_DESCRIPTION = 'Welcome to my website!';
+export const SITE_TITLE = 'William DeAngelis';
+export const SITE_DESCRIPTION = 'ML engineering, radar systems, and the math in between. Former Navy AEGIS technician building AI for defense applications.';
+export const SITE_AUTHOR = 'William DeAngelis';
+export const GITHUB_URL = 'https://github.com/W-DeAngelis';
