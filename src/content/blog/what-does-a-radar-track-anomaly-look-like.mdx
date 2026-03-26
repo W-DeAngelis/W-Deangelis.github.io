@@ -1,0 +1,128 @@
+---
+title: "What Does a Radar Track Anomaly Actually Look Like?"
+description: "Before building a detector, you need to understand what you are detecting. A look at kinematic anomalies in radar track data from an operational perspective."
+pubDate: 2026-03-25
+tags: ["Radar Tracking", "AEGIS", "Domain Knowledge"]
+---
+
+import RadarTrackViz from '../../components/visualizations/RadarTrackViz.jsx';
+
+*Before building a detector, you need to understand what you are detecting.*
+
+---
+
+## On Watch
+
+The combat information center of a Navy warship is a dark room full of screens. When you are standing watch at the combat system console, your job is to maintain awareness of everything moving in the air, on the surface, and below it: simultaneously, continuously, and correctly.
+
+The tracks on your display are not just symbols. A track is the combat system's running record of a contact: where it is, where it has been, and where it is going. Each track is built from a stream of radar measurements, updated continuously as the radar sweeps. When you are watching the scope, you are watching the system's best estimate of reality, updated every few seconds for every contact in the picture.
+
+I spent several years in the Navy as an AEGIS Fire Control System technician aboard a guided-missile destroyer. The job had two sides. The first was maintenance: keeping the sensors, computers, and weapons systems that make up the AEGIS combat system operational, troubleshooting failures at the system and component level, performing preventive and corrective maintenance on equipment that does not tolerate neglect. The second was standing watch as part of the combat system team. One of my watch stations was the Missile System Supervisor, the person at the console responsible for the final authorization to launch surface-to-air missiles and for remote control of the Close-In Weapon System. In the chain that runs from radar detection to weapons release, MSS is the last human in the loop.
+
+Most of a deployment does not feel like that. Deployments have a rhythm that becomes routine surprisingly fast. The watch rotations, the maintenance cycles, the daily briefings, the same stretch of ocean. There is a groundhog day quality to it that nobody tells you about before you ship out. You stand the same watches, run the same checks, log the same readings. If you did not make a deliberate effort to go outside the skin of the ship, you could go days without seeing sunlight. The combat system hums along and the scope is full of tracks that behave exactly the way tracks are supposed to behave.
+
+And then, occasionally, it is not like that at all.
+
+Air warfare does not give you time to be wrong. A modern anti-ship missile flying low on the horizon, designed to evade radar by staying below the earth's curvature until the last possible moment, can close from radar detection to impact in under a minute. In that window, the combat system must detect the contact, establish a track, classify the threat, recommend an engagement, and execute, largely automatically, with a human in the loop for authorization. Every second of that sequence depends on the track being accurate. A bad track, one that jumps, drifts, or behaves inconsistently, can corrupt the engagement solution before anyone realizes something is wrong.
+
+This is the problem I want to solve. Not because it is an interesting academic exercise, but because I stood those watches.
+
+---
+
+## What SPY-1D Actually Does
+
+The SPY-1D is a phased array radar, a fixed panel of thousands of antenna elements that can electronically steer a beam in any direction without physically moving. Unlike a traditional rotating dish, a phased array can search multiple sectors, track multiple contacts, and illuminate targets for missile guidance simultaneously, managing all of it through software.
+
+When the radar detects a return from a contact, it does not hand you a clean position. It hands you a measurement, a noisy estimate of where something was at the moment the beam passed through that volume of sky. The noise is not a flaw in the design. It is physics. Radio waves travel through atmosphere that bends and absorbs them unpredictably. They reflect off a target whose exact shape and orientation changes moment to moment. The receiver electronics that capture the return introduce their own small errors. The result is that even a perfectly stationary object would appear to move slightly between scans, not because it moved, but because each measurement carries some random error around the true position.
+
+It helps to think of it concretely. Imagine measuring the length of a table with a slightly warped ruler. Every time you measure, you get a slightly different number. The table has not changed. The measurement has noise in it. Now imagine the table is moving, and you are measuring its position every few seconds, and each measurement has that same random error. Your job is to figure out exactly where the table is and how fast it is moving, using only those imperfect readings. That is the tracking problem.
+
+Real systems operate in multiple modes, dedicated search, track-while-scan, fire control, each with different revisit rates depending on the threat environment and what the system is prioritizing. For this project, I simulate a simplified version of a tracking radar that updates each contact every few seconds. That interval is not a specification. It is a modeling choice that captures the essential character of the problem.
+
+The visualization below shows exactly this process. Step through each scan to see how the radar builds a track from imperfect measurements. The green dot is where the contact actually is. The orange dot is what the radar sees. The blue dot is what the system uses to track the contact.
+
+<RadarTrackViz client:load />
+
+The radar hands off these noisy position measurements to the tracking software, which is responsible for turning a stream of imperfect observations into a coherent, reliable estimate of where each contact is and where it is going. That tracking problem is where everything interesting happens.
+
+---
+
+## The Track as a State Estimate
+
+When the combat system tracks a contact, it is not simply recording where the radar saw something. It is maintaining a running estimate of the contact's full kinematic state, position and velocity together, and using each new measurement to refine that estimate.
+
+Think of it this way. If you see a car at a particular intersection, you know where it is. But if you have been watching it for thirty seconds, you also know which direction it is heading and roughly how fast. That history gives you the ability to predict where it will be in five seconds, and to recognize immediately if it suddenly appears somewhere inconsistent with that prediction.
+
+The combat system does exactly this, mathematically and continuously, for every contact on the scope. The state of a track at any moment is not just a position. It is a position plus a velocity, plus an estimate of how uncertain those values are. Every few seconds, the system predicts where the contact should be based on its current state, compares that prediction to the new radar measurement, and updates its estimate accordingly. The gap between the prediction and the measurement is where anomalies live.
+
+---
+
+## What a Normal Track Looks Like
+
+A normal track has a rhythm to it. A surface contact moves at a consistent speed on a consistent heading, deviating only gradually as it navigates. An aircraft flies straight legs between turns, with turns that follow the physics of what that aircraft can do, bounded by its speed and structural limits. A missile in flight follows a trajectory dictated by its motor and guidance system.
+
+In all of these cases, the measurements the radar hands to the tracker are noisy but consistent. Each new position is close to where the previous state predicted it would be. The errors are small, roughly symmetric, and random. They do not accumulate in any particular direction. The track looks like what it is: a real object moving through space, observed imperfectly but predictably.
+
+This is the baseline. Everything that follows is a deviation from it.
+
+---
+
+## The Three Ways a Track Goes Wrong
+
+Not all anomalies are the same. In building this project I identified three distinct kinematic failure modes, each with a different operational signature and a different level of difficulty to detect.
+
+**Sudden maneuver.** The contact changes velocity abruptly: a sharp turn, an acceleration, a course reversal. The new measurement lands far from where the tracker predicted. The gap is large, immediate, and obvious. An experienced watchstander sees it the moment the scan updates. The classical detector sees it too. This is the easy case.
+
+**Track jump.** The contact's position shifts discontinuously, not because the target maneuvered, but because the tracker associated a measurement from the wrong contact, or because someone inserted a false track into the picture. The position changes but the velocity does not. Subsequent scans continue from the new position as if nothing happened. This looks wrong immediately, but the cause is ambiguous. It could be a data association error, it could be sensor interference, it could be something deliberate. Detection is straightforward; interpretation is not.
+
+**Gradual drift.** This is the hard one. Beginning at some point in the track's history, the contact starts accumulating a small, persistent bias in its motion: always a little faster than expected, always a little further north than predicted. No single scan looks wrong. Each individual measurement is within the noise envelope of what the tracker expects. But over twenty, thirty, fifty scans, the track has drifted into a region of state space that is inconsistent with normal behavior. An experienced watchstander integrating that history intuitively might notice before the system flags it. The classical detector, which evaluates each scan largely in isolation, often does not.
+
+---
+
+## The Gap Between Operator Intuition and System Detection
+
+There is something the human perceptual system does remarkably well that classical detection algorithms do poorly: integrate weak evidence across time. When you have been watching a track for several minutes, you are not just seeing the current scan. You are seeing the full history, pattern-matched against everything you have ever seen a contact do. Gradual drift registers as a feeling before it registers as a number. Something is off. The track does not look right. You call it before the system does.
+
+The classical statistical detector does not have that history in the same way. It computes a score for each scan based on how surprising the current measurement is given the current prediction. It is optimal for detecting a single surprising scan: a sudden maneuver, a position jump. But gradual drift produces a sequence of mildly surprising scans, none of which individually crosses the detection threshold. The pattern is only anomalous in aggregate, and the classical detector has no natural way to accumulate that evidence.
+
+This gap, between what a trained human perceives and what the algorithm flags, is the core problem this project addresses.
+
+---
+
+## Why This Is Hard
+
+Three things make this problem genuinely difficult, and understanding them is necessary before any modeling decision makes sense.
+
+First, noise is unavoidable and overlaps with signal. Every normal track looks slightly anomalous on any given scan. The measurement error that makes gradual drift hard to distinguish from noise is the same measurement error that makes normal tracks look imperfect. Any detector sensitive enough to catch subtle drift will also generate false alarms on normal tracks, unless it has learned the difference between random noise and systematic deviation.
+
+Second, anomalous tracks are rare. In a well-maintained combat picture, the overwhelming majority of tracks behave normally. An anomaly rate of five percent is already elevated, representing a significant number of tracks behaving unexpectedly. This imbalance means that a detector optimized purely for accuracy will learn to call everything normal and still be right ninety-five percent of the time. The metric that matters is not accuracy. It is precision and recall on the anomalous class specifically.
+
+Third, the same anomaly signature can have different causes. A track jump might be a sensor glitch, a data association error, or a deliberate spoofing attempt. The detector's job is not to determine cause. It is to flag that something is wrong and let a human investigate. Building a system that conflates detection with diagnosis is a design error.
+
+---
+
+## The Thesis
+
+Classical anomaly detectors evaluate each scan against a statistical threshold derived from the tracker's prediction. They are well-suited to sudden, large deviations, the cases where the math is obvious and the operator would have called it anyway. They struggle with the cases that matter most operationally: the subtle, sustained, accumulating deviations that only become anomalous when you look at the full history of a track.
+
+Machine learning offers a different approach. Rather than defining anomaly as a single-scan statistical deviation, a learned model can be trained on thousands of normal tracks and develop a representation of what normal kinematic behavior looks like across time. When a new track arrives, the model scores it not by comparing one scan to one prediction, but by asking how surprising the full sequence is under everything it has learned about normal behavior. Gradual drift, invisible to the classical detector scan by scan, becomes detectable because the model has learned that this kind of accumulated deviation does not appear in normal tracks.
+
+That is what this project builds: an end-to-end pipeline for radar track kinematic anomaly detection, from simulated SPY-1D track data through Kalman filter baselines to learned sequence models, evaluated rigorously against the cases that classical methods miss. The next post derives the mathematical foundation, the Kalman filter, the innovation signal, and exactly why the gap between prediction and measurement is the right place to look for anomalies.
+
+---
+
+## What Is Coming
+
+| Post | Title | What You Will Learn |
+|---|---|---|
+| 1 | What Does a Radar Track Anomaly Actually Look Like? | The operational context, the three ways a radar track fails, and why subtle anomalies are harder to detect than obvious ones |
+| 2 | The Kalman Filter Is Not Magic | The algorithm every radar tracker runs under the hood, how it predicts where a contact will be before the next scan arrives, and how that prediction gap becomes an anomaly score |
+| 3 | How to Simulate 50,000 Radar Tracks Without Leaving Your Desk | Why simulation is a strength rather than a limitation, and how to generate realistic track data with injected anomalies for training and evaluation |
+| 4 | Why Your Features Matter More Than Your Model | How feeding a neural network physics-informed inputs instead of raw measurements reduces the learning problem and improves detection, with a direct comparison of both approaches |
+| 5 | Teaching a Neural Network What Normal Looks Like | How to train a sequence model on normal tracks only, so that anomalous tracks register as surprising, without ever showing the model what an anomaly looks like |
+| 6 | Does Attention Help? | Whether Transformer-based models outperform LSTMs on the specific anomaly types that require integrating evidence across many scans |
+| 7 | From Notebook to Production | How to wrap a trained model in a reproducible, deployable pipeline using Docker, experiment tracking, a REST API, and automated CI/CD |
+| 8 | What Actually Works | A rigorous comparison of every model and feature set, broken down by anomaly type and difficulty, with statistical confidence intervals |
+| 9 | How a Navy Veteran Built an AEGIS AI System | The full story of the project, the career transition, and what it takes to build something worth showing to a defense AI team |
+
+*This series documents the full build as it happens. Some posts in the roadmap may expand into two as the material develops. Links will appear as each post goes live.*
