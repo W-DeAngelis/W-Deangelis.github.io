@@ -279,25 +279,26 @@ export default function RadarTrackViz() {
 
   return (
     <div style={{ fontFamily: "'JetBrains Mono', monospace", margin: "2rem 0" }}>
-      <div style={{ position: "relative", background: "#13151a", border: "0.5px solid rgba(255,255,255,0.08)", borderRadius: "10px", overflow: "hidden", marginBottom: "12px" }}>
-        <canvas ref={canvasRef} style={{ display: "block", width: "100%" }} />
-
-        {/* Corner legend — bottom left */}
-        <div style={{ position: "absolute", bottom: "14px", left: "16px", background: "rgba(11,12,15,0.9)", border: "0.5px solid rgba(255,255,255,0.1)", borderRadius: "6px", padding: "10px 14px", fontSize: "11px", color: "#6b6a64", lineHeight: "2.2", pointerEvents: "none" }}>
+        {/* Legend above canvas */}
+        <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", marginBottom: "10px", fontSize: "11px", color: "#6b6a64", alignItems: "center" }}>
           {[["#4ade9a", "True position"], ["#f87060", "Radar return"], ["#60a8f8", "Track estimate"]].map(([color, label]) => (
-            <div key={label} style={{ display: "flex", alignItems: "center", gap: "9px" }}>
+            <div key={label} style={{ display: "flex", alignItems: "center", gap: "7px", whiteSpace: "nowrap" }}>
               <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: color, flexShrink: 0 }} />
               {label}
             </div>
           ))}
-          <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
-            <div style={{ width: "18px", height: "0", borderTop: "2.5px dashed rgba(248,112,96,0.7)", flexShrink: 0 }} />
+          <div style={{ display: "flex", alignItems: "center", gap: "7px", whiteSpace: "nowrap" }}>
+            <div style={{ width: "18px", height: "0", borderTop: "2px dashed rgba(248,112,96,0.7)", flexShrink: 0 }} />
             Measurement error
           </div>
         </div>
+      <div style={{ position: "relative", background: "#13151a", border: "0.5px solid rgba(255,255,255,0.08)", borderRadius: "10px", overflow: "hidden", marginBottom: "12px" }}>
+        <canvas ref={canvasRef} style={{ display: "block", width: "100%" }} />
+
+
 
         {/* HUD — top right */}
-        <div style={{ position: "absolute", top: "14px", right: "16px", fontSize: "11px", color: "rgba(255,255,255,0.18)", letterSpacing: "0.1em", lineHeight: "2", textAlign: "right", pointerEvents: "none" }}>
+        <div style={{ position: "absolute", top: "14px", left: "16px", fontSize: "11px", color: "rgba(255,255,255,0.18)", letterSpacing: "0.1em", lineHeight: "2", pointerEvents: "none" }}>
           <div>SCAN {scan} / {MAX}</div>
           <div>T + {scan * DT} s</div>
         </div>

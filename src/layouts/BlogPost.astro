@@ -17,16 +17,16 @@ const { title, description, pubDate, updatedDate } = Astro.props;
         margin: 0 auto;
         padding: 2.5em 1.5em;
         display: grid;
-        grid-template-columns: 1fr 220px;
+        grid-template-columns: 1fr 200px;
         grid-template-areas: "content toc";
-        gap: 3em;
+        gap: 2em;
         align-items: start;
       }
 
       /* ── Prose column ── */
       .prose {
         grid-area: content;
-        max-width: 720px;
+        max-width: 860px;
         width: 100%;
         color: var(--text);
       }

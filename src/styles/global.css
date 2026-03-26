@@ -40,7 +40,7 @@ body {
   overflow-wrap: break-word;
 }
 main {
-  width: 760px;
+  width: 860px;
   max-width: calc(100% - 2em);
   margin: auto;
   padding: 3em 1em;
