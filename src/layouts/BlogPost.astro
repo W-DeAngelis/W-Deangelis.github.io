@@ -1,86 +1,400 @@
 ---
-import { Image } from 'astro:assets';
 import type { CollectionEntry } from 'astro:content';
 import BaseHead from '../components/BaseHead.astro';
 import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
-
 type Props = CollectionEntry<'blog'>['data'];
-
-const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
+const { title, description, pubDate, updatedDate } = Astro.props;
 ---
-
 <html lang="en">
-	<head>
-		<BaseHead title={title} description={description} />
-		<style>
-			main {
-				width: calc(100% - 2em);
-				max-width: 100%;
-				margin: 0;
-			}
-			.hero-image {
-				width: 100%;
-			}
-			.hero-image img {
-				display: block;
-				margin: 0 auto;
-				border-radius: 12px;
-				box-shadow: var(--box-shadow);
-			}
-			.prose {
-				width: 720px;
-				max-width: calc(100% - 2em);
-				margin: auto;
-				padding: 1em;
-				color: rgb(var(--gray-dark));
-			}
-			.title {
-				margin-bottom: 1em;
-				padding: 1em 0;
-				text-align: center;
-				line-height: 1;
-			}
-			.title h1 {
-				margin: 0 0 0.5em 0;
-			}
-			.date {
-				margin-bottom: 0.5em;
-				color: rgb(var(--gray));
-			}
-			.last-updated-on {
-				font-style: italic;
-			}
-		</style>
-	</head>
+  <head>
+    <BaseHead title={title} description={description} />
+    <style is:global>
+      /* ── Page shell ── */
+      .post-shell {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2.5em 1.5em;
+        display: grid;
+        grid-template-columns: 1fr 220px;
+        grid-template-areas: "content toc";
+        gap: 3em;
+        align-items: start;
+      }
 
-	<body>
-		<Header />
-		<main>
-			<article>
-				<div class="hero-image">
-					{heroImage && <Image width={1020} height={510} src={heroImage} alt="" />}
-				</div>
-				<div class="prose">
-					<div class="title">
-						<div class="date">
-							<FormattedDate date={pubDate} />
-							{
-								updatedDate && (
-									<div class="last-updated-on">
-										Last updated on <FormattedDate date={updatedDate} />
-									</div>
-								)
-							}
-						</div>
-						<h1>{title}</h1>
-						<hr />
-					</div>
-					<slot />
-				</div>
-			</article>
-		</main>
-		<Footer />
-	</body>
+      /* ── Prose column ── */
+      .prose {
+        grid-area: content;
+        max-width: 720px;
+        width: 100%;
+        color: var(--text);
+      }
+
+      .post-header {
+        margin-bottom: 2em;
+        padding-bottom: 1.5em;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .post-date {
+        font-size: 0.8em;
+        color: var(--text-muted);
+        margin-bottom: 0.75em;
+        display: flex;
+        align-items: center;
+        gap: 0.75em;
+      }
+
+      .post-tags {
+        display: flex;
+        gap: 0.4em;
+        flex-wrap: wrap;
+        margin-top: 1em;
+      }
+
+      .post-tag {
+        font-size: 0.75em;
+        background: var(--accent-glow);
+        color: var(--accent);
+        border: 1px solid var(--accent-dim);
+        padding: 2px 10px;
+        border-radius: 20px;
+      }
+
+      /* ── TOC sidebar ── */
+      .toc-sidebar {
+        grid-area: toc;
+        position: sticky;
+        top: 80px;
+        max-height: calc(100vh - 100px);
+        overflow-y: auto;
+        scrollbar-width: none;
+      }
+      .toc-sidebar::-webkit-scrollbar { display: none; }
+
+      .toc-inner {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 1em;
+      }
+
+      .toc-label {
+        font-size: 0.7em;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-muted);
+        margin-bottom: 0.75em;
+        font-weight: 600;
+      }
+
+      .toc-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .toc-list a {
+        display: block;
+        font-size: 0.78em;
+        color: var(--text-muted);
+        text-decoration: none;
+        padding: 4px 8px;
+        border-radius: 4px;
+        border-left: 2px solid transparent;
+        line-height: 1.4;
+        transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+      }
+
+      .toc-list a:hover {
+        color: var(--text);
+        background: rgba(255,255,255,0.04);
+        text-decoration: none;
+      }
+
+      .toc-list a.active {
+        color: var(--accent);
+        border-left-color: var(--accent);
+        background: var(--accent-glow);
+      }
+
+      /* ── Mobile TOC dropdown ── */
+      .toc-mobile {
+        display: none;
+        margin-bottom: 1.5em;
+      }
+
+      .toc-mobile-toggle {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.75em 1em;
+        font-size: 0.85em;
+        color: var(--text-muted);
+        cursor: pointer;
+        font-family: inherit;
+      }
+
+      .toc-mobile-toggle:hover { border-color: var(--accent); color: var(--text); }
+
+      .toc-mobile-chevron {
+        transition: transform 0.2s ease;
+        font-size: 0.8em;
+      }
+
+      .toc-mobile-toggle.open .toc-mobile-chevron { transform: rotate(180deg); }
+
+      .toc-mobile-list {
+        display: none;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-top: none;
+        border-radius: 0 0 8px 8px;
+        padding: 0.5em;
+      }
+
+      .toc-mobile-list.open { display: block; }
+
+      .toc-mobile-list a {
+        display: block;
+        font-size: 0.85em;
+        color: var(--text-muted);
+        text-decoration: none;
+        padding: 6px 10px;
+        border-radius: 4px;
+        transition: color 0.15s, background 0.15s;
+      }
+
+      .toc-mobile-list a:hover {
+        color: var(--accent);
+        background: var(--accent-glow);
+        text-decoration: none;
+      }
+
+      /* ── Responsive ── */
+      @media (max-width: 900px) {
+        .post-shell {
+          grid-template-columns: 1fr;
+          grid-template-areas: "content";
+          gap: 0;
+        }
+        .toc-sidebar { display: none; }
+        .toc-mobile  { display: block; }
+      }
+
+      @media (max-width: 600px) {
+        .post-shell { padding: 1.5em 1em; }
+      }
+
+      /* ── Prose typography ── */
+      .prose h2 {
+        font-size: 1.5em;
+        margin-top: 2em;
+        margin-bottom: 0.6em;
+        color: var(--text-heading);
+        scroll-margin-top: 90px;
+      }
+      .prose h3 {
+        font-size: 1.2em;
+        margin-top: 1.5em;
+        margin-bottom: 0.5em;
+        color: var(--text-heading);
+        scroll-margin-top: 90px;
+      }
+      .prose p  { margin-bottom: 1.25em; line-height: 1.8; }
+      .prose hr { border: none; border-top: 1px solid var(--border); margin: 2em 0; }
+      .prose em { color: var(--text-muted); }
+
+      .prose table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1.5em 0;
+        font-size: 0.9em;
+      }
+      .prose th {
+        background: var(--bg-card);
+        color: var(--accent);
+        padding: 0.6em 0.9em;
+        text-align: left;
+        font-size: 0.8em;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-bottom: 1px solid var(--border);
+      }
+      .prose td {
+        padding: 0.6em 0.9em;
+        border-bottom: 1px solid var(--border);
+        color: var(--text);
+        vertical-align: top;
+      }
+      .prose tr:last-child td { border-bottom: none; }
+
+      .prose strong { color: var(--text-heading); font-weight: 700; }
+
+      .prose blockquote {
+        border-left: 3px solid var(--accent);
+        padding: 0.5em 0 0.5em 1.5em;
+        margin: 1.5em 0;
+        background: var(--accent-glow);
+        border-radius: 0 8px 8px 0;
+        font-style: italic;
+        color: var(--text-muted);
+      }
+    </style>
+  </head>
+  <body>
+    <Header />
+    <main>
+      <div class="post-shell">
+
+        <!-- Main content -->
+        <article class="prose">
+
+          <!-- Mobile TOC dropdown -->
+          <div class="toc-mobile">
+            <button class="toc-mobile-toggle" id="toc-toggle">
+              <span>On this page</span>
+              <span class="toc-mobile-chevron">▼</span>
+            </button>
+            <div class="toc-mobile-list" id="toc-mobile-list"></div>
+          </div>
+
+          <!-- Post header -->
+          <div class="post-header">
+            <div class="post-date">
+              <FormattedDate date={pubDate} />
+              {updatedDate && (
+                <span style="font-style:italic">
+                  Updated <FormattedDate date={updatedDate} />
+                </span>
+              )}
+            </div>
+            <h1 style="margin:0 0 0.25em 0; font-size:2.2em; line-height:1.15;">{title}</h1>
+            <p style="color:var(--text-muted);margin:0 0 1em 0;font-size:1em;">{description}</p>
+          </div>
+
+          <!-- Post body -->
+          <slot />
+        </article>
+
+        <!-- Desktop TOC sidebar -->
+        <aside class="toc-sidebar">
+          <div class="toc-inner">
+            <div class="toc-label">On this page</div>
+            <ul class="toc-list" id="toc-list"></ul>
+          </div>
+        </aside>
+
+      </div>
+    </main>
+    <Footer />
+
+    <script>
+      // ── Build TOC from page headings ──────────────────
+      function buildTOC() {
+        const headings = Array.from(
+          document.querySelector('.prose')?.querySelectorAll('h2, h3') ?? []
+        );
+
+        if (headings.length === 0) return;
+
+        // Ensure every heading has an id for anchor linking
+        headings.forEach(h => {
+          if (!h.id) {
+            h.id = h.textContent
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, '-')
+              .replace(/^-+|-+$/g, '');
+          }
+        });
+
+        const desktopList  = document.getElementById('toc-list');
+        const mobileList   = document.getElementById('toc-mobile-list');
+
+        headings.forEach(h => {
+          const isH3 = h.tagName === 'H3';
+          const text = h.textContent;
+          const href = `#${h.id}`;
+
+          // Desktop item
+          const li = document.createElement('li');
+          li.style.paddingLeft = isH3 ? '0.75em' : '0';
+          const a = document.createElement('a');
+          a.href = href;
+          a.textContent = text;
+          a.addEventListener('click', e => {
+            e.preventDefault();
+            document.getElementById(h.id)?.scrollIntoView({ behavior: 'smooth' });
+          });
+          li.appendChild(a);
+          desktopList?.appendChild(li);
+
+          // Mobile item
+          const ma = document.createElement('a');
+          ma.href = href;
+          ma.textContent = text;
+          ma.style.paddingLeft = isH3 ? '1.5em' : '0.6em';
+          ma.addEventListener('click', e => {
+            e.preventDefault();
+            document.getElementById(h.id)?.scrollIntoView({ behavior: 'smooth' });
+            // Close mobile dropdown after click
+            document.getElementById('toc-mobile-list')?.classList.remove('open');
+            document.getElementById('toc-toggle')?.classList.remove('open');
+          });
+          mobileList?.appendChild(ma);
+        });
+      }
+
+      // ── Active section highlight on scroll ────────────
+      function initScrollSpy() {
+        const links = Array.from(
+          document.querySelectorAll('#toc-list a')
+        );
+        if (links.length === 0) return;
+
+        const observer = new IntersectionObserver(
+          entries => {
+            entries.forEach(entry => {
+              if (entry.isIntersecting) {
+                links.forEach(l => l.classList.remove('active'));
+                const active = links.find(
+                  l => l.getAttribute('href') === `#${entry.target.id}`
+                );
+                active?.classList.add('active');
+              }
+            });
+          },
+          { rootMargin: '-10% 0px -80% 0px', threshold: 0 }
+        );
+
+        document.querySelectorAll('.prose h2, .prose h3').forEach(h => {
+          if (h.id) observer.observe(h);
+        });
+      }
+
+      // ── Mobile toggle ─────────────────────────────────
+      function initMobileToggle() {
+        const toggle = document.getElementById('toc-toggle');
+        const list   = document.getElementById('toc-mobile-list');
+        toggle?.addEventListener('click', () => {
+          toggle.classList.toggle('open');
+          list?.classList.toggle('open');
+        });
+      }
+
+      document.addEventListener('DOMContentLoaded', () => {
+        buildTOC();
+        initScrollSpy();
+        initMobileToggle();
+      });
+    </script>
+  </body>
 </html>
