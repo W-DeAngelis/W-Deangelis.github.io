@@ -41,7 +41,7 @@ Real systems operate in multiple modes, dedicated search, track-while-scan, fire
 
 The visualization below shows exactly this process. Step through each scan to see how the radar builds a track from imperfect measurements. The green dot is where the contact actually is. The orange dot is what the radar sees. The blue dot is what the system uses to track the contact.
 
-<RadarTrackViz client:load />
+<div class="viz-breakout"><RadarTrackViz client:load /></div>
 
 The radar hands off these noisy position measurements to the tracking software, which is responsible for turning a stream of imperfect observations into a coherent, reliable estimate of where each contact is and where it is going. That tracking problem is where everything interesting happens.
 

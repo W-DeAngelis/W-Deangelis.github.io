@@ -40,8 +40,8 @@ body {
   overflow-wrap: break-word;
 }
 main {
-  width: 860px;
-  max-width: calc(100% - 2em);
+  width: 100%;
+  max-width: 100%;
   margin: auto;
   padding: 3em 1em;
 }
@@ -140,4 +140,11 @@ tr:last-child td { border-bottom: none; }
   clip: rect(1px, 1px, 1px, 1px);
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+/* Breakout width for visualizations — fills prose column fully */
+.viz-breakout {
+  width: 100%;
+  position: relative;
+  z-index: 1;
 }

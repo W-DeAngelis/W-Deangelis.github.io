@@ -13,20 +13,20 @@ const { title, description, pubDate, updatedDate } = Astro.props;
     <style is:global>
       /* ── Page shell ── */
       .post-shell {
-        max-width: 1200px;
+        max-width: 1400px;
         margin: 0 auto;
-        padding: 2.5em 1.5em;
+        padding: 2.5em 0.5em;
         display: grid;
         grid-template-columns: 1fr 200px;
         grid-template-areas: "content toc";
-        gap: 2em;
+        gap: 1em;
         align-items: start;
       }
 
       /* ── Prose column ── */
       .prose {
         grid-area: content;
-        max-width: 860px;
+        max-width: 1060px;
         width: 100%;
         color: var(--text);
       }
@@ -66,6 +66,7 @@ const { title, description, pubDate, updatedDate } = Astro.props;
       .toc-sidebar {
         grid-area: toc;
         position: sticky;
+        z-index: 10;
         top: 80px;
         max-height: calc(100vh - 100px);
         overflow-y: auto;
@@ -180,7 +181,7 @@ const { title, description, pubDate, updatedDate } = Astro.props;
       }
 
       /* ── Responsive ── */
-      @media (max-width: 900px) {
+      @media (max-width: 1000px) {
         .post-shell {
           grid-template-columns: 1fr;
           grid-template-areas: "content";
